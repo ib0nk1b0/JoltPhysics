@@ -2,11 +2,11 @@ project "Jolt"
     kind "StaticLib"
     language "C++"
     cppdialect "C++17"
-    staticruntime "off" -- should this be on?
-
+    staticruntime "off"
+   
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
-
+   
     -- Jolt root directory
     JOLT_DIR = "%{wks.location}/OpenEngine/vendor/Jolt"
 
@@ -14,6 +14,10 @@ project "Jolt"
     {
         JOLT_DIR .. "/Jolt/**.h",
         JOLT_DIR .. "/Jolt/**.cpp",
+
+        -- Optional: exclude samples/tests if you have the full repo
+        JOLT_DIR .. "/Jolt/**Tests.cpp",
+        JOLT_DIR .. "/Jolt/**Samples/**",
     }
 
     includedirs
@@ -21,40 +25,26 @@ project "Jolt"
         JOLT_DIR,
         JOLT_DIR .. "/Jolt",
     }
-
-    defines
-    {
-        "JPH_ENABLE_ASSERTS",
-        "JPH_STATIC_LIBRARY",
-        "JPH_FLOATING_POINT_PRECISION=32",
-        "JPH_USE_SSE4_1",
+   
+    defines {
+        "JPH_FLOATING_POINT_CONTROL",
+        "JPH_PROFILE_ENABLED",          -- optional
+        -- "JPH_DEBUG_RENDERER",        -- only if you need it
+        -- "JPH_ENABLE_ASSERTS",        -- recommended in Debug
     }
+   
+    filter "configurations:Debug"
+        defines { "JPH_DEBUG_RENDERER", "JPH_ENABLE_ASSERTS" }
+        symbols "On"
+        optimize "Off"
+
+    filter "configurations:Release or Dist"
+        optimize "Speed"
+        flags { "LinkTimeOptimization" }
+        defines { "NDEBUG" }
 
     filter "system:windows"
-        systemversion "latest"
-        defines
-        {
-            "JPH_PLATFORM_WINDOWS",
-            "JPH_COMPILER_MSVC",
-            "_CRT_SECURE_NO_WARNINGS"
-        }
-
-    filter "configurations:Debug"
-        runtime "Debug"
-        symbols "On"
-        defines
-        {
-            "JPH_DEBUG",
-            "JPH_ENABLE_ASSERTS"
-        }
-
-    filter "configurations:Release"
-        runtime "Release"
-        optimize "Speed"
-        defines
-        {
-            "JPH_RELEASE",
-            "NDEBUG"
-        }
+        defines { "WIN32", "_WIN32" }
+        disablewarnings { "4100", "4189", "4324" } -- common Jolt warnings
 
     filter {}
